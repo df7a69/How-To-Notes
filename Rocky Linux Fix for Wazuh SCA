@@ -1,0 +1,38 @@
+Hello!
+
+Updating /var/ossec/ruleset/sca/cis_centos8_linux.yml on the manager will not update it on new agents. To distribute a modified version you can use centralized configuration.
+
+To deploy the new policy file to all your affected agents copy the file to a group where the agents are included, for example, the default group:
+cp /var/ossec/ruleset/sca/cis_centos8_linux.yml.disabled /var/ossec/etc/shared/default/cis_centos8_linux_modified.yml
+
+Modify the new policy /var/ossec/etc/shared/default/cis_centos8_linux_modified.yml to include your operating systems:
+
+
+requirements:
+ title: "Check Centos 8 family platform"
+ description: "Requirements for running the policy against CentOS 8 family."
+ condition: any
+ rules:
+  - 'f:/etc/redhat-release -> r:^Centos && r:release 8'
+  - 'f:/etc/redhat-release -> r:^AlmaLinux && r:release 8'
+
+Make sure the file is owned by the ossec user and group so it will be distributed using the centralized configuration:
+chown ossec: /var/ossec/etc/shared/default/cis_centos8_linux_modified.yml
+
+Add the following configuration to your group's centralized configuration, for example /var/ossec/etc/shared/default/agent.conf :
+    <sca>
+        <policies>
+            <policy>/var/ossec/etc/shared/cis_centos8_linux_modified.yml</policy>
+        </policies>
+    </sca>
+
+The agents will receive the new configuration and automatically restart to apply it.
+
+Enable sca.remote_commands to allow the execution of commands from SCA policies pushed from the manager in the shared configuration. Add sca.remote_commands=1 on each agent's /var/ossec/etc/local_internal_options.conf. For security reasons, this change has to be made locally on each agent.
+
+Remove the old policy to avoid conflicts  rm /var/ossec/ruleset/sca/cis_centos8_linux.yml. Restart the agent so the changes can take effect.
+
+Regarding your first question, I think I'd be a good idea to modify the official policy to include these operating systems, feel free to open an issue in https://github.com/wazuh/wazuh/issues/new/choose so our development team will consider this change.
+
+Best regards,
+Sandra.
